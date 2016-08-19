@@ -1,5 +1,3 @@
-# require 'test_helper'
-
 require "test_helper"
 
 class ActionDispatch::IntegrationTest
@@ -21,7 +19,11 @@ end
 class AirGeneratorTest < ActionDispatch::IntegrationTest
   test "generate energy air tickets" do
     Capybara.current_driver = :poltergeist
+    duration_times = []
+    phone_number = "0798695031"
+    @times_won = 0
     loop do
+      start_time = Time.now
       visit 'https://game.energy.ch'
       start
       answer_question(question) until finished?
@@ -29,18 +31,28 @@ class AirGeneratorTest < ActionDispatch::IntegrationTest
       proceed_to_bubbles
       choose_random_bubble
       unless all("#wingame h1").present?
-        puts page.driver.cookies.inspect
-        find("#wingame > form > fieldset > div:nth-child(1) > div > input").set("0796098775")
+        #puts page.driver.cookies.inspect
+        @times_won += 1
+        find("#wingame > form > fieldset > div:nth-child(1) > div > input").set(phone_number)
         find("#wingame > form > fieldset > div:nth-child(3) > button").click
-        print("√")
+        print("√√WIN√√ Check your SMS phone number: " + phone_number)
       else
-        print "-"
+        print "--Lost--"
       end
       File.open("output.html", "w") do |f|
         f.write(body)
       end
       page.driver.clear_cookies
+      finish_time = Time.now
+      show_infos(duration_times << (finish_time - start_time).round(1))
     end
+  end
+
+  def show_infos(duration_times)
+    print "Time: " + duration_times.last.to_s
+    print "-Average Time: " + (duration_times.inject{ |sum, el| sum + el }.to_f / duration_times.size).round(1).to_s
+    print "-Times won: " + @times_won.to_s
+    print "\n"
   end
 
   def answer_question(q)
