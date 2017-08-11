@@ -34,23 +34,18 @@ class AirGeneratorTest < ActionDispatch::IntegrationTest
         proceed_to_bubbles
         choose_random_bubble
         begin
-          if !all('#wingame h1').present? || !find("#wingame h1").text.match(/knapp daneben/)
-            puts page.driver.cookies.inspect
-            require 'pry'
-            binding.pry
-            @times_won += 1
-            find("#wingame > form > fieldset > div:nth-child(1) > div > input").set(phone_number)
-            find("#wingame > form > fieldset > div:nth-child(3) > button").click
-            print("√√WIN√√ Check your SMS phone number: " + phone_number)
-          else
+          if all('#wingame h1').present? || find("#wingame h1").text.match(/knapp daneben/)
             puts find("#wingame h1").text
             @times_lost += 1
             print "--Lost--"
           end
         rescue
-         puts page.driver.cookies.inspect
-         require 'pry'
-         binding.pry
+          puts page.driver.cookies.inspect
+          @times_won += 1
+          print("√√WIN√√ Check your SMS phone number: " + phone_number)
+          File.open("win.html", "w") do |f|
+            f.write(body)
+          end
         end
         File.open("output.html", "w") do |f|
           f.write(body)
