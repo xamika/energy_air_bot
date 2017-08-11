@@ -1,0 +1,19 @@
+version: '3'
+services:
+  web:
+    build:
+      args: &args
+        ftp_proxy: ${ftp_proxy}
+        http_proxy: ${http_proxy}
+        https_proxy: ${https_proxy}
+        no_proxy: ${no_proxy}
+      context: .
+    environment:
+      ftp_proxy: ''
+      http_proxy: ''
+      https_proxy: ''
+      no_proxy: ''
+    entrypoint: "/energy_air_bot/lib/docker-entrypoint.sh"
+    command: bundle exec rails test test/air_generator_test.rb
+    volumes:
+      - .:/energy_air_bot

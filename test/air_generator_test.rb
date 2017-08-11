@@ -18,6 +18,7 @@ end
 
 class AirGeneratorTest < ActionDispatch::IntegrationTest
   test "generate energy air tickets" do
+    #Capybara.current_driver = Capybara::Poltergeist::Driver.new(:poltergeist, phantomjs_options: ["--proxy=proxy.corproot.net:8079"])
     Capybara.current_driver = :poltergeist
     duration_times = []
     phone_number = "0796098775"
@@ -32,18 +33,24 @@ class AirGeneratorTest < ActionDispatch::IntegrationTest
 
         proceed_to_bubbles
         choose_random_bubble
-        unless find("#wingame h1").text.match(/knapp daneben/)
-          puts page.driver.cookies.inspect
-          require 'pry'
-          binding.pry
-          @times_won += 1
-          find("#wingame > form > fieldset > div:nth-child(1) > div > input").set(phone_number)
-          find("#wingame > form > fieldset > div:nth-child(3) > button").click
-          print("√√WIN√√ Check your SMS phone number: " + phone_number)
-        else
-          puts find("#wingame h1").text
-          @times_lost += 1
-          print "--Lost--"
+        begin
+          if !all('#wingame h1').present? || !find("#wingame h1").text.match(/knapp daneben/)
+            puts page.driver.cookies.inspect
+            require 'pry'
+            binding.pry
+            @times_won += 1
+            find("#wingame > form > fieldset > div:nth-child(1) > div > input").set(phone_number)
+            find("#wingame > form > fieldset > div:nth-child(3) > button").click
+            print("√√WIN√√ Check your SMS phone number: " + phone_number)
+          else
+            puts find("#wingame h1").text
+            @times_lost += 1
+            print "--Lost--"
+          end
+        rescue
+         puts page.driver.cookies.inspect
+         require 'pry'
+         binding.pry
         end
         File.open("output.html", "w") do |f|
           f.write(body)
@@ -51,13 +58,15 @@ class AirGeneratorTest < ActionDispatch::IntegrationTest
         page.driver.clear_cookies
         finish_time = Time.now
         show_infos(duration_times << (finish_time - start_time).round(1))
-      rescue
-        print "+++++++++++++ERROR+++++++++++++"
+      rescue => e
+        print "+++++++++++++ERROR+++++++++++++ #{e.message}"
+        Capybara.reset_sessions!
       end
     end
   end
 
   def show_infos(duration_times)
+    print Time.now.to_s
     print "Time: " + duration_times.last.to_s
     print "-Average Time: " + (duration_times.inject{ |sum, el| sum + el }.to_f / duration_times.size).round(1).to_s
     print "-Times won: " + @times_won.to_s
@@ -68,7 +77,7 @@ class AirGeneratorTest < ActionDispatch::IntegrationTest
   def answer_question(q)
     if QUESTIONS.key?(q)
       answer_id = QUESTIONS[q]
-      puts "#{q} => #{all(".fields .fieldrow").map(&:text)[answer_id - 1]}"
+      #puts "#{q} => #{all(".fields .fieldrow").map(&:text)[answer_id - 1]}"
       find("label[for=\"option#{answer_id}\"]").trigger("click")
       click_next
     else
@@ -104,9 +113,6 @@ Possible answers:#{all(".fields .fieldrow").map(&:text)}"
 
   def question
     find("body > div.container > div > div > form > h1").text
-  rescue
-    require 'pry'
-    binding.pry
   end
 
   QUESTIONS = {
