@@ -17,18 +17,22 @@ end
 
 
 class AirGeneratorTest < ActionDispatch::IntegrationTest
+  setup do
+    @id = SecureRandom.hex(5)
+  end   
+
   test "generate energy air tickets" do
     #Capybara.current_driver = Capybara::Poltergeist::Driver.new(:poltergeist, phantomjs_options: ["--proxy=proxy.corproot.net:8079"])
     Capybara.current_driver = :poltergeist
     duration_times = []
-    phone_number = "0796098775"
+    @phone_number = "0788659266"
     @times_won = 0
     @times_lost = 0
     loop do
       begin
         start_time = Time.now
         visit 'https://game.energy.ch'
-        start(phone_number)
+        start(@phone_number)
         answer_question(question) until finished?
 
         proceed_to_bubbles
@@ -42,7 +46,7 @@ class AirGeneratorTest < ActionDispatch::IntegrationTest
         rescue
           puts page.driver.cookies.inspect
           @times_won += 1
-          print("√√WIN√√ Check your SMS phone number: " + phone_number)
+          print("√√WIN√√ Check your SMS phone number: " + @phone_number)
           File.open("win.html", "w") do |f|
             f.write(body)
           end
@@ -54,7 +58,7 @@ class AirGeneratorTest < ActionDispatch::IntegrationTest
         finish_time = Time.now
         show_infos(duration_times << (finish_time - start_time).round(1))
       rescue => e
-        print "+++++++++++++ERROR+++++++++++++ #{e.message}"
+        puts "+++++++++++++ERROR+++++++++++++ #{e.message}"
         Capybara.reset_sessions!
       end
     end
@@ -67,6 +71,9 @@ class AirGeneratorTest < ActionDispatch::IntegrationTest
     print "-Times won: " + @times_won.to_s
     print "-Times lost: " + @times_lost.to_s
     print "\n"
+    open("#{@phone_number}.log", 'a') { |f|
+      f.puts "Time: #{Time.now} - Duration: #{duration_times.last} - Average Duration: #{(duration_times.inject{ |sum, el| sum + el }.to_f / duration_times.size).round(1)} - Times won: #{@times_won} - Times lost: #{@times_lost} - Bot id: #{@id}\n"
+    }
   end
 
   def answer_question(q)
